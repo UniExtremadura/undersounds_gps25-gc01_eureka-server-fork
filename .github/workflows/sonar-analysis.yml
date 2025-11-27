@@ -1,9 +1,11 @@
 name: SonarCloud Analysis
 
 on:
+  # Dispara el flujo de trabajo en cada 'push' a la rama principal (master o main)
   push:
     branches:
-      - master  # Cambia a 'main' si tu rama principal se llama así
+      - master  # ASEGÚRATE: Cambia a 'main' si esa es tu rama principal
+  # También se ejecuta en la creación o actualización de Pull Requests
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -14,17 +16,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Necesario para el análisis profundo de SonarCloud
       
-      # Configurar Java
+      # 1. Configurar Java para Gradle
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: 17
           distribution: 'temurin'
-          cache: maven
+          cache: gradle # Importante: Usamos caché de Gradle
           
-      # Caché para el escáner
+      # 2. Caché para el escáner de SonarCloud
       - name: Cache SonarCloud Scanner
         uses: actions/cache@v4
         with:
@@ -32,14 +34,14 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
           
-      # Ejecutar el análisis con Maven
+      # 3. Ejecutar el análisis con Gradle
       - name: Build and analyze
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Usa el Secreto guardado
         run: >
-          mvn -B verify 
-          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar 
-          -Dsonar.projectKey=undersounds_gps25-gc01-eureka-server-fork  # <-- ¡ESTO!
+          chmod +x gradlew # Dar permisos de ejecución al wrapper de Gradle
+          ./gradlew sonarqube
+          -Dsonar.projectKey=undersounds_gps25-gc01-eureka-server-fork 
           -Dsonar.organization=Universidad de Extremadura
           -Dsonar.host.url=https://sonarcloud.io
